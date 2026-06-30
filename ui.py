@@ -1,219 +1,356 @@
 # ==========================================================
 # UI.PY
 #
-# Frontend File
+# Enterprise AI Portal
 #
-# Framework : Streamlit
+# Frontend Framework:
+# Streamlit
 #
-# Interview Definition:
-#
-# Streamlit is a Python framework used to
-# build data apps and AI interfaces quickly.
+# Interview:
 #
 # Why Streamlit?
 #
-# • very easy
-# • no HTML needed
-# • ideal for AI engineers
-# • chat applications can be built fast
+# Fast UI Development
+#
+# Python Based
+#
+# No HTML/CSS Required
+#
+# Great for AI Apps
 #
 # ==========================================================
-# ==========================================================
-# IMPORTS
-# ==========================================================
-# streamlit -> frontend framework
+
 import streamlit as st
-# requests -> communicate with FastAPI
 import requests
-# json -> export chat history
 import json
+
+
+# ==========================================================
+# BACKEND URL
+# ==========================================================
+
+# Production API URL
+
+API_URL = "https://enterprise-ai-portal.onrender.com"
+
+
 # ==========================================================
 # PAGE CONFIGURATION
 # ==========================================================
-# sets browser title
-# icon
-# wide layout
-# Interview:
-#
-# st.set_page_config()
-#
-# customizes Streamlit page settings
+
 st.set_page_config(
+
     page_title="Enterprise AI Portal",
+
     page_icon="🤖",
+
     layout="wide"
+
 )
+
 # ==========================================================
-# PAGE HEADER
+# TITLE
 # ==========================================================
-# application title
+
 st.title(
+
     "🤖 Enterprise AI Portal"
+
 )
-# small subtitle
+
 st.caption(
-    "AI Agent • RAG • Memory • Tools"
+
+    "AI Agent • Memory • Tools • LangGraph"
+
 )
+
+
 # ==========================================================
 # SIDEBAR
 # ==========================================================
-# sidebar used for
-# uploads
-# settings
-# controls
+
 with st.sidebar:
+
     st.header(
+
         "Enterprise AI Portal"
+
     )
-    # ======================================
+
+    # =======================================
     # PDF Upload
-    # ======================================
-    # Interview:
-    # file_uploader()
-    # receives files from user
+    # =======================================
+
     uploaded_file = st.file_uploader(
+
         "Upload PDF",
+
         type=["pdf"]
+
     )
-    # ======================================
-    # Upload PDF to FastAPI
-    # ======================================
+
     if uploaded_file:
+
         files = {
-            "file":
-            (
+
+            "file": (
+
                 uploaded_file.name,
+
                 uploaded_file.getvalue(),
+
                 "application/pdf"
+
             )
+
         }
-        response = requests.post(
-            "http://127.0.0.1:8000/upload-pdf",
-            files=files
-        )
-        result = response.json()
-        st.success(
-            "PDF Uploaded"
-        )
-        st.info(
-            f"Chunks : {result['chunks']}"
-        )
+
+        try:
+
+            response = requests.post(
+
+                f"{API_URL}/upload-pdf",
+
+                files=files
+
+            )
+
+            result = response.json()
+
+            st.success(
+
+                "PDF Uploaded"
+
+            )
+
+            st.info(
+
+                f"Chunks : {result['chunks']}"
+
+            )
+
+        except:
+
+            st.warning(
+
+                "PDF Upload disabled on deployment"
+
+            )
+
     st.divider()
-    # ======================================
+
+    # =======================================
     # Clear Chat
-    # ======================================
-    # Interview:
-    # session_state
-    # stores temporary data
-    # during user session
+    # =======================================
+
     if st.button(
+
         "🗑 Clear Chat"
+
     ):
+
         st.session_state.messages = []
+
         st.rerun()
-    # ======================================
-    # Download Chat
-    # ======================================
-    # allows exporting conversation
+
+    # =======================================
+    # Export Conversation
+    # =======================================
+
     if st.session_state.get(
+
         "messages"
+
     ):
+
         st.download_button(
+
             "⬇ Download Chat",
+
             json.dumps(
+
                 st.session_state.messages,
+
                 indent=2
+
             ),
+
             file_name="conversation.json"
+
         )
+
+
 # ==========================================================
-# FEATURES SECTION
+# FEATURES
 # ==========================================================
-# explains project capabilities
-# useful during interviews
+
 st.markdown(
+
 """
+
 ### Available Features
-✅ PDF Chat ✅ Enterprise RAG ✅ Memory ✅ Calculator Tool ✅ Time Tool ✅ Agent Routing ✅ Download Conversation
+
+✅ Chat Assistant
+
+✅ Memory
+
+✅ Calculator Tool
+
+✅ Time Tool
+
+✅ Agent Routing
+
+✅ PromptTemplate
+
+✅ LangGraph Demo
+
+✅ Export Conversation
+
+✅ FastAPI Deployment
+
 """
+
 )
+
 st.divider()
+
+
 # ==========================================================
-# SESSION STATE
+# SESSION MEMORY
 # ==========================================================
-# Interview Definition:
-# session_state
-# stores variables
-# between reruns
+
+# Interview:
+#
+# Why Session State?
+#
+# Maintains conversation
+#
 # without database
+#
+# during current session
+
 if "messages" not in st.session_state:
+
     st.session_state.messages = []
+
+
 # ==========================================================
-# DISPLAY CONVERSATION
+# DISPLAY CHAT HISTORY
 # ==========================================================
-# shows previous chat messages
+
 for message in st.session_state.messages:
+
     with st.chat_message(
+
         message["role"]
+
     ):
+
         st.write(
+
             message["content"]
+
         )
+
+
 # ==========================================================
 # CHAT INPUT
 # ==========================================================
-# user types question
+
 question = st.chat_input(
+
     "Ask anything..."
+
 )
-# ==========================================================
-# SEND MESSAGE
-# ==========================================================
+
 if question:
-    # save user message
+
     st.session_state.messages.append(
+
         {
+
             "role": "user",
+
             "content": question
+
         }
+
     )
+
     with st.chat_message(
+
         "user"
+
     ):
+
         st.write(
+
             question
+
         )
-    # ==================================
-    # Call FastAPI backend
-    # ==================================
-    response = requests.post(
-        "http://127.0.0.1:8000/chat",
-        json={
-            "question":
-            question
-        }
-    )
-    # get answer
-    answer = response.json()[
-        "answer"
-    ]
-    # save assistant response
+
+    try:
+
+        response = requests.post(
+
+            f"{API_URL}/chat",
+
+            json={
+
+                "question": question
+
+            }
+
+        )
+
+        answer = response.json()[
+
+            "answer"
+
+        ]
+
+    except:
+
+        answer = (
+
+            "Backend unavailable."
+
+        )
+
     st.session_state.messages.append(
+
         {
-            "role":"assistant",
-            "content":answer
+
+            "role": "assistant",
+
+            "content": answer
+
         }
+
     )
+
     with st.chat_message(
+
         "assistant"
+
     ):
+
         st.write(
+
             answer
+
         )
+
+
+
 # ==========================================================
 # FOOTER
 # ==========================================================
+
 st.divider()
+
 st.caption(
-    "Built with FastAPI • Streamlit • Groq • ChromaDB"
+
+    "Built with FastAPI • Streamlit • Groq • LangChain • LangGraph"
+
 )
