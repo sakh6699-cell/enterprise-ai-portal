@@ -1,44 +1,26 @@
 # ==========================================================
 # RAG.PY
 #
-# Definition:
-#
-# RAG stands for
 # Retrieval Augmented Generation
-#
-# It retrieves relevant information
-# before sending prompt to LLM.
 #
 # Flow:
 #
 # PDF
-#
 # ↓
-#
+# Loader
+# ↓
 # Chunking
-#
 # ↓
-#
 # Embeddings
-#
 # ↓
-#
 # ChromaDB
-#
 # ↓
-#
 # Retriever
-#
 # ↓
-#
-# Relevant Context
-#
+# Context
 # ↓
-#
 # PromptTemplate
-#
 # ↓
-#
 # LLM
 #
 #
@@ -46,105 +28,193 @@
 #
 # Why RAG?
 #
-# Answer:
-#
 # RAG reduces hallucinations
-# by grounding LLM responses
+# by grounding LLM answers
 # using retrieved documents.
 #
 # ==========================================================
+
+
 # ==========================================================
 # IMPORTS
 # ==========================================================
-# PDF Loader
+
 from langchain_community.document_loaders import (
     PyPDFLoader
 )
-# Text Splitter
+
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter
 )
-# Vector Database
+
 from langchain_community.vectorstores import (
     Chroma
 )
-# Embedding Model
+
 from langchain_huggingface import (
     HuggingFaceEmbeddings
 )
-# ==========================================================
-# EMBEDDING MODEL
-# ==========================================================
-# Definition:
-#
-# Embeddings convert text
-# into vectors.
-#
-# Interview:
-#
-# Why Embeddings?
-#
-# Semantic Search
-#
-# Similar Meaning
-#
-# Similar Vectors
-embedding = HuggingFaceEmbeddings(
-    model_name=
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
+
+
 # ==========================================================
 # VECTOR DATABASE PATH
 # ==========================================================
+
 DB_PATH = "vector_db"
+
+
+# ==========================================================
+# LAZY LOADING EMBEDDING
+# ==========================================================
+#
+# Definition:
+#
+# Lazy Loading means
+# loading object only
+# when needed.
+#
+#
+# Why?
+#
+# HuggingFace models
+# consume memory.
+#
+# Render Free Tier
+# provides only 512MB RAM.
+#
+# Lazy loading prevents
+# model initialization
+# during app startup.
+#
+#
+# Interview:
+#
+# Why Lazy Loading?
+#
+# Faster startup
+#
+# Lower memory usage
+#
+# Deployment optimization
+#
+# ==========================================================
+
+_embedding = None
+
+
+def get_embedding():
+
+    global _embedding
+
+    if _embedding is None:
+
+        _embedding = HuggingFaceEmbeddings(
+
+            model_name=
+
+            "sentence-transformers/all-MiniLM-L6-v2"
+
+        )
+
+    return _embedding
+
+
 # ==========================================================
 # PROCESS PDF
 # ==========================================================
+#
 # Definition:
 #
 # Extract text
 #
-# Split text
+# Chunk text
 #
-# Generate embeddings
+# Create embeddings
 #
-# Store embeddings
+# Store vectors
+#
 #
 # Interview:
 #
-# Why chunking?
+# Why Chunking?
 #
-# Large documents exceed
-# LLM context limits.
+# LLM context window
+# is limited.
 #
-# Chunking improves retrieval.
+# Chunking improves
+# retrieval accuracy.
+#
+# ==========================================================
+
 def process_pdf(pdf_path):
+
+
+    # --------------------------------
+    # Load Embedding Model
+    # --------------------------------
+
+    embedding = get_embedding()
+
+
+    # --------------------------------
     # Load PDF
+    # --------------------------------
+
     loader = PyPDFLoader(
+
         pdf_path
+
     )
+
     documents = loader.load()
-    # Chunking
+
+
+    # --------------------------------
+    # Text Splitter
+    # --------------------------------
+
     splitter = RecursiveCharacterTextSplitter(
+
         chunk_size=1000,
+
         chunk_overlap=200
+
     )
+
+
     chunks = splitter.split_documents(
+
         documents
+
     )
-    # Store vectors
+
+
+    # --------------------------------
+    # Store into ChromaDB
+    # --------------------------------
+
     Chroma.from_documents(
+
         documents=chunks,
+
         embedding=embedding,
-        persist_directory=
-        DB_PATH
+
+        persist_directory=DB_PATH
+
     )
+
+
     return len(
+
         chunks
+
     )
+
+
 # ==========================================================
 # SEARCH PDF
 # ==========================================================
+#
 # Definition:
 #
 # Retrieve relevant chunks
@@ -156,8 +226,8 @@ def process_pdf(pdf_path):
 # What is Retriever?
 #
 # Retriever fetches
-# relevant documents
-# from vector store.
+# semantically similar
+# documents.
 #
 #
 # Why Retriever?
@@ -166,54 +236,84 @@ def process_pdf(pdf_path):
 #
 # Standard LangChain API
 #
-# Reusable
-#
 # Production friendly
+#
+# ==========================================================
+
 def search_pdf(question):
+
+
+    embedding = get_embedding()
+
+
     db = Chroma(
+
         persist_directory=
+
         DB_PATH,
+
         embedding_function=
+
         embedding
+
     )
-    # ==================================================
-    # RETRIEVER
-    # ==================================================
+
+
+    # --------------------------------
+    # Retriever
+    # --------------------------------
+
     retriever = db.as_retriever(
+
         search_kwargs={
+
             "k":3
+
         }
+
     )
-    # Retrieve Top 3 Chunks
+
+
+    # --------------------------------
+    # Top K Search
+    # --------------------------------
+
     docs = retriever.invoke(
+
         question
+
     )
-    # Testing
-    # print(docs)
-    # Verify retrieved chunks
+
+
     context = ""
+
+
     for doc in docs:
+
         context += (
+
             doc.page_content
-            + "\n\n"
+
+            +
+
+            "\n\n"
+
         )
+
+
     return context
+
+
 # ==========================================================
 # TESTING
 # ==========================================================
+#
 # Interview:
 #
 # How to test Retriever?
 #
+#
 # print(docs)
-#
-# Ask:
-#
-# What skills are mentioned?
-#
-# Verify retrieved chunks
-#
-# are relevant.
 #
 #
 # Example:
