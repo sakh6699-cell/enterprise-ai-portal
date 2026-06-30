@@ -6,8 +6,7 @@ langchain
 langchain-core
 langchain-groq
 langchain-community
-chromadb
 pypdf
-sentence-transformers
 python-multipart
 requests
+langgraph

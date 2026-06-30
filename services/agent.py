@@ -44,7 +44,7 @@ from services.tools import (
     current_time
 )
 # PDF Retrieval
-from services.rag import (
+from services.rag_deploy import (
     search_pdf
 )
 # LLM

@@ -1,21 +1,7 @@
-# Python
+venv/
+.env
+uploads/
+vector_db/
+.vscode/
 __pycache__/
 *.pyc
-
-# Virtual Environment
-venv/
-
-# Secrets
-.env
-
-# Uploaded PDFs
-uploads/
-
-# ChromaDB
-vector_db/
-
-# VS Code
-.vscode/
-
-# OS files
-.DS_Store
