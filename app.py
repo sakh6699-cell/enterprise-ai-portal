@@ -35,7 +35,7 @@ from services.pdf_service import save_pdf
 # stores vectors inside ChromaDB
 # search_pdf()
 # retrieves relevant chunks
-from services.rag import process_pdf, search_pdf
+from services.rag_deploy import process_pdf, search_pdf
 # ==========================================================
 # LLM
 # ==========================================================
